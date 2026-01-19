@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy the agent script and requirements file into the container
 COPY agent.py .
+COPY executor.py .
 COPY requirements.txt .
 
 # Install the dependencies

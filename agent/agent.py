@@ -3,6 +3,7 @@ import requests
 import json
 import time
 import datetime
+import executor
 
 DEVICE_NAME = os.getenv("DEVICE_NAME")
 BACKEND_URL = os.getenv("BACKEND_URL")
@@ -48,18 +49,50 @@ if registered_device_id is None:
     print("Error: Could not retrieve device ID from registration response.")
     exit(1)
 
-# --- Heartbeat Loop ---
+# --- Main Loop ---
 heartbeat_url = f"{BACKEND_URL}/devices/heartbeat"
+job_url = f"{BACKEND_URL}/devices/{registered_device_id}/jobs/next"
 heartbeat_payload = {
     "device_id": registered_device_id
 }
 
-print(f"\nStarting heartbeat for device ID: {registered_device_id}")
+print(f"\nStarting main loop for device ID: {registered_device_id}")
 print("Press Ctrl+C to stop the agent.")
 
 try:
     while True:
-        time.sleep(30)
+        # --- Job Polling ---
+        try:
+            response = requests.post(job_url, headers=headers, timeout=5)
+            if response.status_code == 200:
+                job_data = response.json()
+                print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Job received: {job_data}")
+                
+                # Execute the script
+                result = executor.run_script(job_data['script_name'])
+                
+                # Report the result
+                report_url = f"{BACKEND_URL}/executions/{job_data['id']}/report"
+                report_payload = {
+                    "stdout": result['stdout'],
+                    "stderr": result['stderr'],
+                    "status": result['status']
+                }
+                report_response = requests.post(report_url, headers=headers, json=report_payload)
+                report_response.raise_for_status()
+                print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Job report submitted: {report_response.json()}")
+
+            elif response.status_code == 204:
+                # No pending jobs
+                pass
+            else:
+                response.raise_for_status()
+
+        except requests.exceptions.RequestException as e:
+            print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Error polling for jobs: {e}")
+
+        # --- Heartbeat ---
+        time.sleep(10)
         try:
             response = requests.post(heartbeat_url, headers=headers, json=heartbeat_payload)
             response.raise_for_status()
@@ -73,6 +106,7 @@ try:
             print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Timeout error during heartbeat: {timeout_err}")
         except requests.exceptions.RequestException as req_err:
             print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] An unexpected error during heartbeat: {req_err}")
+
 except KeyboardInterrupt:
     print("\nAgent stopped by user (Ctrl+C).")
 except Exception as e:

@@ -27,8 +27,18 @@ class ScriptRunResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class ExecutionCreate(BaseModel):
+    device_id: int
+    script_name: str
+
+class JobResponse(BaseModel):
+    id: int
+    script_name: str
+    device_id: int
+
 class ExecutionOut(BaseModel):
     id: int
+    device_id: int
     script_name: str
     status: str
     stdout: Optional[str] = None
@@ -38,3 +48,8 @@ class ExecutionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ExecutionReport(BaseModel):
+    stdout: str
+    stderr: str
+    status: str

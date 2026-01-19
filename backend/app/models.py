@@ -17,6 +17,7 @@ class Execution(Base):
     __tablename__ = "executions"
 
     id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(Integer)
     script_name = Column(String, index=True)
     status = Column(String, default="pending")
     stdout = Column(Text, nullable=True)
