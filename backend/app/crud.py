@@ -41,3 +41,17 @@ def update_device_status_to_offline(db: Session, device: models.Device):
 
 def get_devices(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Device).offset(skip).limit(limit).all()
+
+def create_execution(db: Session, script_name: str) -> models.Execution:
+    execution = models.Execution(
+        script_name=script_name,
+        status="pending",
+        started_at=datetime.datetime.now()
+    )
+    db.add(execution)
+    db.commit()
+    db.refresh(execution)
+    return execution
+
+def get_execution(db: Session, execution_id: int):
+    return db.query(models.Execution).filter(models.Execution.id == execution_id).first()
