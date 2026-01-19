@@ -4,6 +4,9 @@ from datetime import datetime
 class DeviceCreate(BaseModel):
     name: str
 
+class Heartbeat(BaseModel):
+    device_id: int
+
 class DeviceOut(BaseModel):
     id: int
     name: str

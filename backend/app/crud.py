@@ -5,6 +5,9 @@ import datetime
 def get_device_by_name(db: Session, name: str):
     return db.query(models.Device).filter(models.Device.name == name).first()
 
+def get_device_by_id(db: Session, device_id: int):
+    return db.query(models.Device).filter(models.Device.id == device_id).first()
+
 def create_device(db: Session, device: schemas.DeviceCreate):
     db_device = models.Device(
         name=device.name,
@@ -19,6 +22,19 @@ def create_device(db: Session, device: schemas.DeviceCreate):
 def update_device_status(db: Session, device: models.Device):
     device.last_seen = datetime.datetime.now()
     device.status = "online"
+    db.commit()
+    db.refresh(device)
+    return device
+
+def update_device_heartbeat(db: Session, device: models.Device):
+    device.last_seen = datetime.datetime.now()
+    device.status = "online"
+    db.commit()
+    db.refresh(device)
+    return device
+
+def update_device_status_to_offline(db: Session, device: models.Device):
+    device.status = "offline"
     db.commit()
     db.refresh(device)
     return device
