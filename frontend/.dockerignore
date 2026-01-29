@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+.svelte-kit
+package-lock.json # bun.lockb is used instead
+
+# Build artifacts
+build
+dist
+
+# Environment variables
+.env
+.env.*
+.vercel
+.netlify
+
+# Local development files
+.DS_Store
+Thumbs.db
+.vscode
+*.log
+
+# Test files
+*.spec.ts
+*.test.ts
+
+# Misc
+.cache
+.npmrc
+.bun
