@@ -32,14 +32,10 @@ services:
   frontend:
     build:
       context: ./frontend
-      args:
-        VITE_BACKEND_URL: http://backend:8000
-        VITE_API_TOKEN: 4]JO=U2cFB47ARRHhKi6B!&xd<@lZo$$V
     ports:
       - "4173:4173"
-    environment:
-      - VITE_BACKEND_URL=http://backend:8000
-      - VITE_API_TOKEN=4]JO=U2cFB47ARRHhKi6B!&xd<@lZo$$V
+    env_file:
+      - .env
     depends_on:
       - backend
     networks:
