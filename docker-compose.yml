@@ -32,13 +32,13 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_BACKEND_URL: http://backend:8000
+        VITE_API_TOKEN: ${API_TOKEN}
     ports:
       - "4173:4173"
     env_file:
       - .env
-    environment:
-      - VITE_BACKEND_URL=http://backend:8000
-      - VITE_API_TOKEN
     depends_on:
       - backend
     networks:
