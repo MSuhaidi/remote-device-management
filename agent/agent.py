@@ -13,6 +13,10 @@ if not all([DEVICE_NAME, BACKEND_URL, API_TOKEN]):
     print("Error: DEVICE_NAME, BACKEND_URL, and API_TOKEN environment variables must be set.")
     exit(1)
 
+# --- Debugging ---
+print(f"DEBUG: API_TOKEN loaded: {API_TOKEN[:8]}...")
+# --- End Debugging ---
+
 # --- Device Registration ---
 register_url = f"{BACKEND_URL}/devices/register"
 headers = {
@@ -24,26 +28,41 @@ payload = {
 }
 
 registered_device_id = None
-try:
-    response = requests.post(register_url, headers=headers, json=payload)
-    response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
-    registration_data = response.json()
-    registered_device_id = registration_data.get("id")
-    print("Registration successful:")
-    print(json.dumps(registration_data, indent=2))
-except requests.exceptions.HTTPError as http_err:
-    print(f"HTTP error occurred during registration: {http_err}")
-    print(f"Response: {response.text}")
-    exit(1)
-except requests.exceptions.ConnectionError as conn_err:
-    print(f"Connection error occurred during registration: {conn_err}")
-    exit(1)
-except requests.exceptions.Timeout as timeout_err:
-    print(f"Timeout error occurred during registration: {timeout_err}")
-    exit(1)
-except requests.exceptions.RequestException as req_err:
-    print(f"An unexpected error occurred during registration: {req_err}")
-    exit(1)
+max_retries = 5
+retry_delay = 10
+
+for attempt in range(max_retries):
+    try:
+        print(f"Attempting registration (attempt {attempt + 1}/{max_retries})...")
+        response = requests.post(register_url, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
+        registration_data = response.json()
+        registered_device_id = registration_data.get("id")
+        print("Registration successful:")
+        print(json.dumps(registration_data, indent=2))
+        break
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred during registration: {http_err}")
+        if 'response' in locals():
+            print(f"Response: {response.text}")
+        exit(1)
+    except requests.exceptions.ConnectionError as conn_err:
+        print(f"Connection error occurred during registration: {conn_err}")
+        if attempt < max_retries - 1:
+            print(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+        else:
+            exit(1)
+    except requests.exceptions.Timeout as timeout_err:
+        print(f"Timeout error occurred during registration: {timeout_err}")
+        if attempt < max_retries - 1:
+            print(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+        else:
+            exit(1)
+    except requests.exceptions.RequestException as req_err:
+        print(f"An unexpected error occurred during registration: {req_err}")
+        exit(1)
 
 if registered_device_id is None:
     print("Error: Could not retrieve device ID from registration response.")
@@ -69,10 +88,17 @@ try:
                 print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Job received: {job_data}")
                 
                 # Execute the script
-                result = executor.run_script(job_data['script_name'])
+                if job_data and 'script_name' in job_data:
+                    result = executor.run_script(job_data['script_name'])
+                else:
+                    result = {"stdout": "", "stderr": "Invalid job data", "status": "failed"}
                 
                 # Report the result
-                report_url = f"{BACKEND_URL}/executions/{job_data['id']}/report"
+                job_id = job_data.get('id') if job_data else None
+                if not job_id:
+                    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Invalid job: missing ID")
+                    continue
+                report_url = f"{BACKEND_URL}/executions/{job_id}/report"
                 report_payload = {
                     "stdout": result['stdout'],
                     "stderr": result['stderr'],

@@ -1,5 +1,5 @@
 const BASE_URL = "/api";
-const API_TOKEN = "devtoken"; // Replace with your actual API token
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || "devtoken"; // Replace with your actual API token
 
 const headers = {
   "Content-Type": "application/json",

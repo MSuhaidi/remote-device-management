@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # The command to run when the container starts.
 # Environment variables will be passed in at runtime.
-CMD [ "python", "agent.py" ]
+CMD ["python3", "agent.py"]

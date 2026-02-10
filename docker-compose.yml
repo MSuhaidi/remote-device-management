@@ -1,3 +1,7 @@
+networks:
+  dashboard-net:
+    driver: bridge
+
 services:
   backend:
     build: ./backend
@@ -5,36 +9,41 @@ services:
       - "8000:8000"
     volumes:
       - backend_data:/app/data
+    env_file:
+      - .env
     environment:
-      - API_TOKEN=${API_TOKEN}
       - DATABASE_URL=sqlite:///./data/app.db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    networks:
+      - dashboard-net
 
   agent:
     build: ./agent
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
+    env_file:
+      - .env
     environment:
       - BACKEND_URL=http://backend:8000
-      - API_TOKEN=${API_TOKEN}
       - DEVICE_NAME=docker-agent-01
+    networks:
+      - dashboard-net
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_BACKEND_URL: http://localhost:8000
+        VITE_BACKEND_URL: http://backend:8000
+        VITE_API_TOKEN: 4]JO=U2cFB47ARRHhKi6B!&xd<@lZo$$V
     ports:
       - "4173:4173"
     environment:
-      - VITE_BACKEND_URL=http://localhost:8000
+      - VITE_BACKEND_URL=http://backend:8000
+      - VITE_API_TOKEN=4]JO=U2cFB47ARRHhKi6B!&xd<@lZo$$V
     depends_on:
       - backend
+    networks:
+      - dashboard-net
 
 volumes:
   backend_data:
