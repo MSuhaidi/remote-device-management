@@ -33,14 +33,20 @@ running on each device.
 - Deployment: Docker, Docker Compose
 
 ## How to Run (Local)
-TODO
+
+1. Install Docker and Docker Compose
+2. Copy `.env.example` to `.env` (or use the existing `.env`)
+3. Run the stack:
+   ```bash
+   docker compose up -d
+   ```
+4. Access the dashboard:
+   - Frontend: http://localhost:4173
+   - Backend API: http://localhost:8000
+
+To stop: `docker compose down`
 
 ## Tradeoffs
 - Simplicity over scalability
 - Polling over websockets
 - Static token over auth system
-
-## Definition of Done
-An operator can trigger a script on a remote agent and view the execution
-result in the dashboard.
-
